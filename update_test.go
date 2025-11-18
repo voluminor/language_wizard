@@ -1,6 +1,7 @@
 package language_wizard
 
 import (
+	"context"
 	"testing"
 	"time"
 )
@@ -27,6 +28,43 @@ func TestWait_LanguageChanged(t *testing.T) {
 	case <-time.After(500 * time.Millisecond):
 		t.Fatal("Wait did not return after SetLanguage")
 	}
+}
+
+func TestWait_WaitChan(t *testing.T) {
+	obj := mustNew(t)
+	ctx, ctxClose := context.WithCancel(context.Background())
+
+	go func() {
+		select {
+		case <-ctx.Done():
+			t.Fatal("Wait did not return after WaitChan in first")
+			return
+		case <-obj.WaitChan():
+			return
+		}
+	}()
+
+	go func() {
+		select {
+		case <-ctx.Done():
+			t.Fatal("Wait did not return after WaitChan in second")
+			return
+		case <-obj.WaitChan():
+			if obj.IsClose() {
+				return
+			}
+			return
+		}
+	}()
+
+	time.Sleep(10 * time.Millisecond)
+	if err := obj.SetLanguage("fr", map[string]string{"hi": "Bonjour"}); err != nil {
+		t.Fatalf("SetLanguage error: %v", err)
+	}
+
+	time.Sleep(100 * time.Millisecond)
+	ctxClose()
+	time.Sleep(10 * time.Millisecond)
 }
 
 func TestWait_Close(t *testing.T) {

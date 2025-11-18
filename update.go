@@ -9,6 +9,22 @@ const (
 	EventLanguageChanged EventType = 4
 )
 
+func (obj *LanguageWizardObj) WaitChan() chan struct{} {
+	obj.mx.Lock()
+	ch := obj.changedCh
+	obj.mx.Unlock()
+
+	return ch
+}
+
+func (obj *LanguageWizardObj) IsClose() bool {
+	obj.mx.RLock()
+	closed := obj.closed
+	obj.mx.RUnlock()
+
+	return closed
+}
+
 func (obj *LanguageWizardObj) Wait() EventType {
 	obj.mx.Lock()
 	ch := obj.changedCh
