@@ -139,6 +139,25 @@ return
 }()
 ```
 
+**Context loop:**
+
+```go
+go func () {
+select {
+case <-ctx.Done():
+return
+case <-obj.WaitChan():
+if obj.IsClose(){
+// Cleanup and exit.
+return
+}
+
+// Rebuild caches / refresh UI here.
+}
+}
+}()
+```
+
 ### Logging
 
 ```go
