@@ -1,3 +1,9 @@
+[![Go Report Card](https://goreportcard.com/badge/github.com/voluminor/language_wizard)](https://goreportcard.com/report/github.com/voluminor/language_wizard)
+
+![GitHub repo file or directory count](https://img.shields.io/github/directory-file-count/voluminor/language_wizard?color=orange)
+![GitHub code size in bytes](https://img.shields.io/github/languages/code-size/voluminor/language_wizard?color=green)
+![GitHub repo size](https://img.shields.io/github/repo-size/voluminor/language_wizard)
+
 # language-wizard
 
 *A tiny, thread-safe i18n key–value store with hot language switching and a simple event model.*
