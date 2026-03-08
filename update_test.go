@@ -37,7 +37,7 @@ func TestWait_WaitChan(t *testing.T) {
 	go func() {
 		select {
 		case <-ctx.Done():
-			t.Fatal("Wait did not return after WaitChan in first")
+			t.Error("Wait did not return after WaitChan in first")
 			return
 		case <-obj.WaitChan():
 			return
@@ -47,7 +47,7 @@ func TestWait_WaitChan(t *testing.T) {
 	go func() {
 		select {
 		case <-ctx.Done():
-			t.Fatal("Wait did not return after WaitChan in second")
+			t.Error("Wait did not return after WaitChan in second")
 			return
 		case <-obj.WaitChan():
 			if obj.IsClosed() {
@@ -85,7 +85,7 @@ func TestWait_Close(t *testing.T) {
 	}
 }
 
-func TestWaitAndClose(t *testing.T) {
+func TestWaitUntilClosed(t *testing.T) {
 	obj := mustNew(t)
 	done := make(chan bool, 1)
 	go func() { done <- obj.WaitUntilClosed() }()
