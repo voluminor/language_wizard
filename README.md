@@ -122,12 +122,12 @@ EventLanguageChanged EventType = 4
 )
 
 ev := obj.Wait() // blocks until language changes or object is closed
-ok := obj.WaitAndClose() // true if it was closed, false otherwise
+ok := obj.WaitUntilClosed() // true if it was closed, false otherwise
 ```
 
 * `Wait` blocks on the internal channel. When it unblocks, it inspects the `closed` flag: `EventClose` if closed,
   otherwise `EventLanguageChanged`.&#x20;
-* `WaitAndClose` is a convenience that returns `true` iff the closure event was received.&#x20;
+* `WaitUntilClosed` is a convenience that returns `true` iff the closure event was received.&#x20;
 
 **Typical loop:**
 
@@ -153,7 +153,7 @@ select {
 case <-ctx.Done():
 return
 case <-obj.WaitChan():
-if obj.IsClose(){
+if obj.IsClosed(){
 // Cleanup and exit.
 return
 }
@@ -262,7 +262,7 @@ What’s covered:
 * `Get` defaulting and miss logging.&#x20;
 * Validation and error cases in `New`/`SetLanguage`.
 * Language switching and current language updates.&#x20;
-* Event handling: `Wait`, `WaitAndClose`, and close behavior.&#x20;
+* Event handling: `Wait`, `WaitUntilClosed`, and close behavior.&#x20;
 * `Close` clears words and blocks further updates.&#x20;
 
 ## FAQ
@@ -278,6 +278,55 @@ Yes, it’s a copy. Mutating it won’t affect the internal state. Use `SetLangu
 **Q: What happens after `Close()`?**
 `Wait` unblocks with `EventClose`, the dictionary is cleared, and `SetLanguage` returns `ErrClosed`. Reads still work
 but the dictionary is empty unless you held an external copy.&#x20;
+
+## Important Behavior Notes
+
+### `Get` and `CurrentLanguage` on a closed object
+
+After `Close()` is called, read methods (`Get`, `CurrentLanguage`, `Words`) remain fully functional and do **not**
+return errors or panics. However, `Close()` clears the internal dictionary to an empty map, so:
+
+* `Get(id, def)` will **always return `def`** (the default) for every key and will log `"undef: <id>"` for each call.
+* `CurrentLanguage()` will still return the **last language code** that was set before closing, even though the object
+  is no longer usable for updates.
+* `Words()` will return an **empty map**.
+
+This means there is no way to distinguish "the key is genuinely missing from the current translation" from "the object
+has been closed" by looking at `Get` return values alone. If your code needs to detect closure, check `IsClosed()`
+explicitly before or after calling `Get`.
+
+```go
+if obj.IsClosed() {
+// handle closed state
+return
+}
+val := obj.Get("greeting", "Hello")
+```
+
+### `Wait` behavior after `Close()`
+
+Once `Close()` is called, the internal change channel is closed permanently and is **never replaced**. This has the
+following consequences:
+
+* The **first** `Wait()` call that is blocked at the time of `Close()` will correctly unblock and return `EventClose`.
+* Any **subsequent** `Wait()` calls after `Close()` will also return `EventClose` **immediately** (reading from a
+  closed channel in Go returns the zero value without blocking).
+* If your code calls `Wait()` in a loop, it will **spin indefinitely** after closure unless you explicitly check
+  for `EventClose` and break out:
+
+```go
+for {
+switch obj.Wait() {
+case language_wizard.EventLanguageChanged:
+// handle language change
+case language_wizard.EventClose:
+return // IMPORTANT: you must exit the loop here
+}
+}
+```
+
+Without the `return` (or `break`) on `EventClose`, the loop becomes a busy spin that consumes 100% of a CPU core,
+because `Wait()` never blocks again after the object is closed.
 
 ## Limitations
 

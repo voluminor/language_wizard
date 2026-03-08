@@ -50,7 +50,7 @@ func TestWait_WaitChan(t *testing.T) {
 			t.Fatal("Wait did not return after WaitChan in second")
 			return
 		case <-obj.WaitChan():
-			if obj.IsClose() {
+			if obj.IsClosed() {
 				return
 			}
 			return
@@ -88,14 +88,14 @@ func TestWait_Close(t *testing.T) {
 func TestWaitAndClose(t *testing.T) {
 	obj := mustNew(t)
 	done := make(chan bool, 1)
-	go func() { done <- obj.WaitAndClose() }()
+	go func() { done <- obj.WaitUntilClosed() }()
 	obj.Close()
 	select {
 	case ok := <-done:
 		if !ok {
-			t.Fatalf("WaitAndClose = false, want true")
+			t.Fatalf("WaitUntilClosed = false, want true")
 		}
 	case <-time.After(500 * time.Millisecond):
-		t.Fatal("WaitAndClose did not return after Close")
+		t.Fatal("WaitUntilClosed did not return after Close")
 	}
 }

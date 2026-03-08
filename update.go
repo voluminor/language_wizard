@@ -17,7 +17,7 @@ func (obj *LanguageWizardObj) WaitChan() chan struct{} {
 	return ch
 }
 
-func (obj *LanguageWizardObj) IsClose() bool {
+func (obj *LanguageWizardObj) IsClosed() bool {
 	obj.mx.RLock()
 	closed := obj.closed
 	obj.mx.RUnlock()
@@ -42,6 +42,6 @@ func (obj *LanguageWizardObj) Wait() EventType {
 	return EventLanguageChanged
 }
 
-func (obj *LanguageWizardObj) WaitAndClose() bool {
+func (obj *LanguageWizardObj) WaitUntilClosed() bool {
 	return obj.Wait() == EventClose
 }
