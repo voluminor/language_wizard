@@ -52,3 +52,15 @@ func TestSetLog_AllowsCustomLogger(t *testing.T) {
 		t.Fatalf("custom logger was not called")
 	}
 }
+
+func TestSetLog_NilResetsToNoop(t *testing.T) {
+	obj := mustNew(t)
+
+	obj.SetLog(func(s string) { t.Errorf("logger should not be called after reset, got: %s", s) })
+	obj.SetLog(nil)
+
+	// Must not panic and must return default value
+	if got := obj.Get("nonexistent", "def"); got != "def" {
+		t.Fatalf("Get after SetLog(nil) = %q, want %q", got, "def")
+	}
+}

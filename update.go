@@ -10,33 +10,25 @@ const (
 )
 
 func (obj *LanguageWizardObj) WaitChan() chan struct{} {
-	obj.mx.Lock()
+	obj.mx.RLock()
 	ch := obj.changedCh
-	obj.mx.Unlock()
+	obj.mx.RUnlock()
 
 	return ch
 }
 
 func (obj *LanguageWizardObj) IsClosed() bool {
-	obj.mx.RLock()
-	closed := obj.closed
-	obj.mx.RUnlock()
-
-	return closed
+	return obj.closed.Load()
 }
 
 func (obj *LanguageWizardObj) Wait() EventType {
-	obj.mx.Lock()
+	obj.mx.RLock()
 	ch := obj.changedCh
-	obj.mx.Unlock()
+	obj.mx.RUnlock()
 
 	<-ch
 
-	obj.mx.RLock()
-	closed := obj.closed
-	obj.mx.RUnlock()
-
-	if closed {
+	if obj.closed.Load() {
 		return EventClose
 	}
 	return EventLanguageChanged
