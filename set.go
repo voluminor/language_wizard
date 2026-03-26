@@ -4,7 +4,7 @@ package language_wizard
 
 func (obj *LanguageWizardObj) SetLog(f func(string)) {
 	if f == nil {
-		return
+		f = func(string) {}
 	}
 
 	obj.mx.Lock()
@@ -14,17 +14,14 @@ func (obj *LanguageWizardObj) SetLog(f func(string)) {
 }
 
 func (obj *LanguageWizardObj) SetLanguage(isoLanguage string, words map[string]string) error {
-	if isoLanguage == "" {
-		return ErrNilIsoLang
-	}
-	if words == nil || len(words) == 0 {
-		return ErrNilWords
+	if err := validateLangAndWords(isoLanguage, words); err != nil {
+		return err
 	}
 
 	obj.mx.Lock()
 	defer obj.mx.Unlock()
 
-	if obj.closed {
+	if obj.closed.Load() {
 		return ErrClosed
 	}
 
@@ -33,12 +30,7 @@ func (obj *LanguageWizardObj) SetLanguage(isoLanguage string, words map[string]s
 	}
 
 	obj.currentLanguage = isoLanguage
-
-	copyWords := make(map[string]string, len(words))
-	for k, v := range words {
-		copyWords[k] = v
-	}
-	obj.words = copyWords
+	obj.words = cloneWords(words)
 
 	close(obj.changedCh)
 	obj.changedCh = make(chan struct{})

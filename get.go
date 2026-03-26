@@ -27,12 +27,13 @@ func (obj *LanguageWizardObj) Get(id, def string) string {
 
 	obj.mx.RLock()
 	val, ok := obj.words[id]
+	logFn := obj.log
 	obj.mx.RUnlock()
 
 	if ok {
 		return val
 	}
 
-	obj.log("undef: " + id)
+	logFn("undef: " + id)
 	return def
 }
